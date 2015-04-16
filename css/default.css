@@ -1,0 +1,139 @@
+@charset "utf-8";
+/* Default CSS */
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font: 15px Verdana, Tahoma;
+}
+
+.clearfix:before,
+.clearfix:after {
+    content: "";
+    display: table;
+}
+.clearfix:after {
+    clear: both;
+}
+.clearfix {
+    zoom: 1; /* For IE 6/7 (trigger hasLayout) */
+}
+
+/*Old Browser Render Fix*/
+header, section, footer, aside, nav, main, article, figure
+{
+	display: block;
+}
+
+
+
+.calender {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-flex-direction: column;
+	flex-direction: column;
+
+	/*border: 1px solid #bbb;*/
+	width: 80%;
+	min-height: 800px;
+	margin: 0 auto;
+	margin-top: 50px;
+	/*background: lightgray;*/
+}
+
+.row {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+.rowItem {
+	flex: 1;
+}
+
+.navigationRow {
+
+}
+.navigationRowItem {
+	/*min-height: 50px;
+	min-width: 100px;*/
+	text-align: center;
+}
+
+/* Grid Header*/
+.weekDayNamesRow {
+	text-align: center;
+	background: lightgray;
+	/*min-height: 50px;*/
+	/*border-bottom: 1px solid #999;*/
+}
+.weekDayNamesRowItem {
+	/*min-width: 150px;*/
+	/*background: lightblue;*/
+	/*padding: 5px 0px 10px 0px;*/
+}
+
+.dayNumber {
+	font-weight: bold;
+}
+
+.dayName {
+	float: right;
+	font-style: italic;
+	color: #aaa;
+}
+
+.addEntry {
+	position: absolute;
+	left: 5px;
+	bottom: 5px;
+}
+
+/*Grid Body*/
+.weekDayRow {
+	/*background: pink;*/
+}
+.weekDayRow:first-child {
+	border-left: 1px solid #999;*/
+}
+.weekDayRowItem {
+	border-right: 1px solid #999;
+	border-bottom: 1px solid #999;
+	padding: 5px;
+	/*background: gray;*/
+	min-width: 150px;
+	min-height: 100px;
+	position: relative;
+}
+.weekDayRowItem:first-child {
+	border-left: 1px solid #999;
+}
+.weekDayRowItem:last-child {
+	/*border-bottom: 1px solid #666;*/
+}
+
+.weekDayNamesRowItem, .weekDayRowItem {
+	min-width: 100px;
+}
+
+.actualDay {
+	background: #eee;
+}
+
+.firstRowBorder {
+	border-top: 1px solid #999;
+}
+
+.weekDayEntry {
+	/*background: yellow;*/
+	text-align: right;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	font-size: 12px;
+}
+
+.label_width {
+
+}
