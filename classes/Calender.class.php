@@ -13,9 +13,13 @@ class Calender
 	private $month;
 	private $day;
 
+	private $dbConnection;
+
 
 	public function __construct($year = NULL, $month = NULL, $day = NULL)
 	{
+		$this->dbConnection = new DBConnection();
+
 		//if(isset($_GET['view']))
 		$now = $this->getActualDateTimeObj();
 		//echo "<pre>";
@@ -40,19 +44,7 @@ class Calender
 		else{ $this->day = 01; }
 	}
 
-	private function pullSingleEvent()
-	{
 
-	}
-	private function pullDailyEvents()
-	{
-
-	}
-
-	public function showEvent($eventId)
-	{
-
-	}
 
 	public function showDay()
 	{
@@ -64,7 +56,7 @@ class Calender
 
 	}
 
-	public function showMonth()
+	public function showMonth($month = NULL, $year = NULL)
 	{
 		// Wochen Grid anzeigen
 		if( $this->year == NULL || $this->month == NULL || $this->day == NULL )
@@ -73,12 +65,12 @@ class Calender
 		}
 		else
 		{
-			$dbConnection = new DBConnection();
+			//$dbConnection = new DBConnection();
 
-			$dbConnection->openConnection();
+			$this->dbConnection->openConnection();
 
-			$clearedYear	= $dbConnection->SqlInjectionStopper($this->year);
-			$clearedMonth	= $dbConnection->SqlInjectionStopper($this->month);
+			$clearedYear	= $this->dbConnection->SqlInjectionStopper($this->year);
+			$clearedMonth	= $this->dbConnection->SqlInjectionStopper($this->month);
 
 			$sqlQuery = "
 						SELECT
@@ -94,7 +86,7 @@ class Calender
 						ASC
 						";
 
-			$sqlResult = $dbConnection->sendSqlQuery($sqlQuery);
+			$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
 
 			$monthDayCount = $this->monthDayCount($this->year.'-'.$this->month.'-'.$this->day);
 
@@ -167,9 +159,10 @@ class Calender
 								<div class="weekDayEntry">
 									<?php
 
-									$startTime = $this->formatTime($entry['entry_start_datetime']);
+									$startTime	= $this->formatTime($entry['entry_start_datetime']);
+									$endTime	= $this->formatTime($entry['entry_end_datetime']);
 
-									echo '<a href="" title="'.$entry['entry_body'].'">'.$startTime.' '.$entry['entry_header'].'</a> <a href="?action=edit_event&event_id='.$entry['entry_id'].'" title="Eintrag &auml;ndern"><i class="fa fa-pencil-square-o"></i></a> <a href="?action=del_event&event_id='.$entry['entry_id'].'" title="Eintrag l&ouml;schen"><i class="fa fa-eraser"></i></a>';
+									echo '<a href="" title="'.$entry['entry_body'].'">'.$startTime.' - '.$endTime.'<br>'.$entry['entry_header'].'</a> <a href="?action=edit_event&event_id='.$entry['entry_id'].'" title="Eintrag &auml;ndern"><i class="fa fa-pencil-square-o"></i></a> <a href="?action=del_event&confirm=check&event_id='.$entry['entry_id'].'" title="Eintrag l&ouml;schen"><i class="fa fa-eraser"></i></a>';
 
 									?>
 								</div>
@@ -243,7 +236,7 @@ class Calender
 
 			*/
 
-			$dbConnection->closeConnection();
+			$this->dbConnection->closeConnection();
 		}
 	}
 
@@ -259,96 +252,313 @@ class Calender
 
 
 
-	// Database Interaction
 
-	public function addEvent(	&$ref_event_start_day,
-								&$ref_event_start_month,
-								&$ref_event_start_year,
-								&$ref_event_start_hour,
-								&$ref_event_start_minute,
-								&$ref_event_end_day,
-								&$ref_event_end_month,
-								&$ref_event_end_year,
-								&$ref_event_end_hour,
-								&$ref_event_end_minute,
-								&$ref_event_header,
-								&$ref_event_body)
+	public function showEventForm($event = NULL)
 	{
-		$dbConnection = new DBConnection();
+		if($event != NULL)
+		{
+			$event_start = $this->getSpecificDateTimeObj($event['entry_start_datetime']);
+			$event_end = $this->getSpecificDateTimeObj($event['entry_end_datetime']);
 
-		$dbConnection->openConnection();
+			$event_start_day	= $event_start->format('d');
+			$event_start_month	= $event_start->format('m');
+			$event_start_year	= $event_start->format('Y');
+			$event_start_hour	= $event_start->format('H');
+			$event_start_minute	= $event_start->format('i');
+			$event_end_day		= $event_end->format('d');
+			$event_end_month	= $event_end->format('m');
+			$event_end_year		= $event_end->format('Y');
+			$event_end_hour		= $event_end->format('H');
+			$event_end_minute	= $event_end->format('i');
+		}
 
+	
+	?>
+		<div class="event_form">
+				<fieldset name="eventForm">
+					<legend>Tragen Sie die Termindetails ein</legend>
+					<br>
+					<form action="?action=add_event&confirm=check" method="post">
+						<fieldset name="event_start">
+							<legend>Beginn</legend>
+							<label for="date" class="label_width">Datum: </label>
+							<select name="event_start_day">
+								<?php
+									for($i = 1; $i <= 31; $i++)
+									{
+										echo '<option value="'. $i.'"';
+										if($event != NULL && $event_start_day == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							.
+							<select name="event_start_month">
+								<?php
+									for($i = 1; $i <= 12; $i++)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_start_month*1 == $i )	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							.
+							<select name="event_start_year">
+								<?php
+									for($i = 2014; $i <= 2050; $i++)
+									{
+										echo '<option value="'.$i.'"';
+										if($event != NULL && $event_start_year == $i)	echo ' selected';
+										echo '>'.$i.'</option>';
+									}
+								?>
+							</select>
+							<br>
+							<label for="time">Uhrzeit: </label>
+							<select name="event_start_hour">
+								<?php
+									for($i = 0; $i <= 23; $i++)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_start_hour == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							:
+							<select name="event_start_minute">
+								<?php
+									for($i = 0; $i < 60; $i += 15)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_start_minute == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+						</fieldset>
 
-		$cleared_event_start_day		= $dbConnection->SqlInjectionStopper($ref_event_start_day);
-		$cleared_event_start_month		= $dbConnection->SqlInjectionStopper($ref_event_start_month);
-		$cleared_event_start_year		= $dbConnection->SqlInjectionStopper($ref_event_start_year);
-		$cleared_event_start_hour		= $dbConnection->SqlInjectionStopper($ref_event_start_hour);
-		$cleared_event_start_minute		= $dbConnection->SqlInjectionStopper($ref_event_start_minute);
-		$cleared_event_end_day			= $dbConnection->SqlInjectionStopper($ref_event_end_day);
-		$cleared_event_end_month		= $dbConnection->SqlInjectionStopper($ref_event_end_month);
-		$cleared_event_end_year			= $dbConnection->SqlInjectionStopper($ref_event_end_year);
-		$cleared_event_end_hour			= $dbConnection->SqlInjectionStopper($ref_event_end_hour);
-		$cleared_event_end_minute		= $dbConnection->SqlInjectionStopper($ref_event_end_minute);
-		$cleared_event_header			= $dbConnection->SqlInjectionStopper($ref_event_header);
-		$cleared_event_body				= $dbConnection->SqlInjectionStopper($ref_event_body);
+						<fieldset name="event_end">
+							<legend>Ende</legend>
+							<label for="date" class="label_width">Datum: </label>
+							<select name="event_end_day">
+								<?php
+									for($i = 1; $i <= 31; $i++)
+									{
+										echo '<option value="'. $i.'"';
+										if($event != NULL && $event_end_day == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							.
+							<select name="event_end_month">
+								<?php
+									for($i = 1; $i <= 12; $i++)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_end_month == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							.
+							<select name="event_end_year">
+								<?php
+									for($i = 2014; $i <= 2050; $i++)
+									{
+										echo '<option value="'.$i.'"';
+										if($event != NULL && $event_end_year == $i)	echo ' selected';
+										echo '>'.$i.'</option>';
+									}
+								?>
+							</select>
+							<br>
+							<label for="time">Uhrzeit: </label>
+							<select name="event_end_hour">
+								<?php
+									for($i = 0; $i <= 23; $i++)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_end_hour == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+							:
+							<select name="event_end_minute">
+								<?php
+									for($i = 0; $i < 60; $i += 15)
+									{
+										echo '<option value="'. $i .'"';
+										if($event != NULL && $event_end_minute == $i)	echo ' selected';
+										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
+									}
+								?>
+							</select>
+						</fieldset>
 
-		$now					= $this->getActualDateTimeObj();
-		$entry_inserted			= $now->format('Y-m-d H:i:s');
-		$entry_start_datetime	= $cleared_event_start_year.'-'.$cleared_event_start_month.'-'.$cleared_event_start_day.' '.$cleared_event_start_hour.':'.$cleared_event_start_minute.':00';
-		$entry_end_datetime		= $cleared_event_end_year.'-'.$cleared_event_end_month.'-'.$cleared_event_end_day.' '.$cleared_event_end_hour.':'.$cleared_event_end_minute.':00';
-
-		$sqlQuery = "
-					INSERT
-						entries (entry_inserted, entry_start_datetime, entry_end_datetime, entry_header, entry_body)
-					VALUES
-						('$entry_inserted', '$entry_start_datetime', '$entry_end_datetime', '$cleared_event_header', '$cleared_event_body')
-					";
-
-		$sqlResult = $dbConnection->sendSqlQuery($sqlQuery);
-
-		if($sqlResult)
-			echo 'Eintragung erfolgreich. <a href="index.php">Zur&uuml;ck</a>';
+						<br>
+						<label for="event_header">&Uuml;berschrift: </label><input type="text" name="event_header" maxlength="200"
+						<?php	if($event != NULL)	echo 'value="'.$event['entry_header'].'"';	?>>
+						<br>
+						<label for="event_body">Beschreibung: </label><textarea name="event_body"><?php	if($event != NULL)	echo $event['entry_body'];	?></textarea>
+						<?php
+							if($event != NULL)
+								echo '<input type="hidden" name="event_id" value="'.$event['entry_id'].'">';
+						?>
+						<br>
+						<button type="submit" name="btn_send">Absenden</button>
+						&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.php">zur&uuml;ck zum Kalender</a>
+					</form>
+				</fieldset>
+			</div>
+	<?php
 	}
 
-	private function editEntry(	&$ref_event_id,
-								&$ref_event_start_day,
-								&$ref_event_start_month,
-								&$ref_event_start_year,
-								&$ref_event_start_hour,
-								&$ref_event_start_minute,
-								&$ref_event_end_day,
-								&$ref_event_end_month,
-								&$ref_event_end_year,
-								&$ref_event_end_hour,
-								&$ref_event_end_minute,
-								&$ref_event_header,
-								&$ref_event_body)
+	public function showEventCheckForm($action)
 	{
-		$dbConnection = new DBConnection();
+		if(isset($_POST['event_id']))
+				$event_id		= filter_input(INPUT_POST, 'event_id', FILTER_VALIDATE_INT);
+		if(isset($_GET['event_id']))
+				$event_id		= filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
 
-		$dbConnection->openConnection();
+		if($action == "del_event")
+		{
+			$event = $this->readEventFromDB($event_id);
+
+			$event_start = $this->getSpecificDateTimeObj($event['entry_start_datetime']);
+			$event_end = $this->getSpecificDateTimeObj($event['entry_end_datetime']);
+
+			$event_start_day	= $event_start->format('d');
+			$event_start_month	= $event_start->format('m');
+			$event_start_year	= $event_start->format('Y');
+			$event_start_hour	= $event_start->format('H');
+			$event_start_minute	= $event_start->format('i');
+			$event_end_day		= $event_end->format('d');
+			$event_end_month	= $event_end->format('m');
+			$event_end_year		= $event_end->format('Y');
+			$event_end_hour		= $event_end->format('H');
+			$event_end_minute	= $event_end->format('i');
+			$event_header		= $event['entry_header'];
+			$event_body			= $event['entry_body'];
+		}
+		else
+		{
+			$event_start_day	= filter_input(INPUT_POST, 'event_start_day', FILTER_VALIDATE_INT);
+			$event_start_month	= filter_input(INPUT_POST, 'event_start_month', FILTER_VALIDATE_INT);
+			$event_start_year	= filter_input(INPUT_POST, 'event_start_year', FILTER_VALIDATE_INT);
+			$event_start_hour	= filter_input(INPUT_POST, 'event_start_hour', FILTER_VALIDATE_INT);
+			$event_start_minute	= filter_input(INPUT_POST, 'event_start_minute', FILTER_VALIDATE_INT);
+			$event_end_day		= filter_input(INPUT_POST, 'event_end_day', FILTER_VALIDATE_INT);
+			$event_end_month	= filter_input(INPUT_POST, 'event_end_month', FILTER_VALIDATE_INT);
+			$event_end_year		= filter_input(INPUT_POST, 'event_end_year', FILTER_VALIDATE_INT);
+			$event_end_hour		= filter_input(INPUT_POST, 'event_end_hour', FILTER_VALIDATE_INT);
+			$event_end_minute	= filter_input(INPUT_POST, 'event_end_minute', FILTER_VALIDATE_INT);
+			$event_header		= filter_input(INPUT_POST, 'event_header', FILTER_SANITIZE_SPECIAL_CHARS);
+			$event_body			= filter_input(INPUT_POST, 'event_body', FILTER_SANITIZE_SPECIAL_CHARS);
+		}
+
+		if(isset($event_id) && ($action == "edit_event") )
+			echo '<form action="index.php?action=edit_event&confirm=true" method="post">';
+		elseif(isset($event_id) && ($action == "del_event") )
+			echo '<form action="index.php?action=del_event&confirm=true" method="post">';
+		else
+			echo '<form action="index.php?action=add_event&confirm=true" method="post">';
+	?>
+
+			<fieldset>
+				<legend>Sind die Daten korrekt ?</legend>
+				<label>&Uuml;berschrift: </label><span><?php echo $event_header; ?></span><br>
+				<label>Beschreibung: </label><span><?php echo $event_body; ?></span><br>
+				<label>Von: </label><span><?php echo str_pad($event_start_day, 2, '0', STR_PAD_LEFT).
+														'.'.str_pad($event_start_month, 2, '0', STR_PAD_LEFT).
+														'.'.str_pad($event_start_year, 2, '0', STR_PAD_LEFT).
+														' '.str_pad($event_start_hour, 2, '0', STR_PAD_LEFT).
+														':'.str_pad($event_start_minute, 2, '0', STR_PAD_LEFT); ?></span><br>
+				<label>Bis: </label><span><?php echo str_pad($event_end_day, 2, '0', STR_PAD_LEFT).
+														'.'.str_pad($event_end_month, 2, '0', STR_PAD_LEFT).
+														'.'.str_pad($event_end_year, 2, '0', STR_PAD_LEFT).
+														' '.str_pad($event_end_hour, 2, '0', STR_PAD_LEFT).
+														':'.str_pad($event_end_minute, 2, '0', STR_PAD_LEFT); ?></span><br>
+				<?php
+				if(isset($event_id) && $action == "del_event")
+				{
+					echo '<button type="submit" name="btn_send" value="add_event_checked">Ja, l&ouml;schen</button>';
+					echo '&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.php">zur&uuml;ck zum Kalender</a>';
+				}
+				else
+				{
+					echo '<button type="submit" name="btn_send" value="add_event_checked">Ja, eintragen</button>';
+				}
+				?>
+				
+				<!--<button type="submit" name="btn_send" value="edit_event">Nein, korriegieren</button>
+				<button type="button" name="btn_send" value="cancel">Abbrechen</button>-->
+
+				<?php
+				if(isset($event_id))
+					echo '<input type="hidden" name="event_id" value="'. $event_id .'">';
+				
+				if($action == "add_event" || $action == "edit_event")
+				{?>
+					<input type="hidden" name="event_header" value="<?php echo $event_header; ?>">
+					<input type="hidden" name="event_body" value="<?php echo $event_body; ?>">
+					<input type="hidden" name="event_start_day" value="<?php echo $event_start_day; ?>">
+					<input type="hidden" name="event_start_month" value="<?php echo $event_start_month; ?>">
+					<input type="hidden" name="event_start_year" value="<?php echo $event_start_year; ?>">
+					<input type="hidden" name="event_start_hour" value="<?php echo $event_start_hour; ?>">
+					<input type="hidden" name="event_start_minute" value="<?php echo $event_start_minute; ?>">
+					<input type="hidden" name="event_end_day" value="<?php echo $event_end_day; ?>">
+					<input type="hidden" name="event_end_month" value="<?php echo $event_end_month; ?>">
+					<input type="hidden" name="event_end_year" value="<?php echo $event_end_year; ?>">
+					<input type="hidden" name="event_end_hour" value="<?php echo $event_end_hour; ?>">
+					<input type="hidden" name="event_end_minute" value="<?php echo $event_end_minute; ?>">
+				<?php
+				}
+				?>
+			</fieldset>
+		</form>
+
+	<?php
+	}
+
+	
 
 
-		$cleared_event_id				= $dbConnection->SqlInjectionStopper($ref_event_id);
-		$cleared_event_start_day		= $dbConnection->SqlInjectionStopper($ref_event_start_day);
-		$cleared_event_start_month		= $dbConnection->SqlInjectionStopper($ref_event_start_month);
-		$cleared_event_start_year		= $dbConnection->SqlInjectionStopper($ref_event_start_year);
-		$cleared_event_start_hour		= $dbConnection->SqlInjectionStopper($ref_event_start_hour);
-		$cleared_event_start_minute		= $dbConnection->SqlInjectionStopper($ref_event_start_minute);
-		$cleared_event_end_day			= $dbConnection->SqlInjectionStopper($ref_event_end_day);
-		$cleared_event_end_month		= $dbConnection->SqlInjectionStopper($ref_event_end_month);
-		$cleared_event_end_year			= $dbConnection->SqlInjectionStopper($ref_event_end_year);
-		$cleared_event_end_hour			= $dbConnection->SqlInjectionStopper($ref_event_end_hour);
-		$cleared_event_end_minute		= $dbConnection->SqlInjectionStopper($ref_event_end_minute);
-		$cleared_event_header			= $dbConnection->SqlInjectionStopper($ref_event_header);
-		$cleared_event_body				= $dbConnection->SqlInjectionStopper($ref_event_body);
+	// Database Interaction
+
+	public function writeEventToDB()
+	{
+		$this->dbConnection->openConnection();
+
+		if(isset($_POST['event_id']))
+			$cleared_event_id				= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_id', FILTER_VALIDATE_INT));
+
+		$cleared_event_start_day		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_start_day', FILTER_VALIDATE_INT));
+		$cleared_event_start_month		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_start_month', FILTER_VALIDATE_INT));
+		$cleared_event_start_year		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_start_year', FILTER_VALIDATE_INT));
+		$cleared_event_start_hour		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_start_hour', FILTER_VALIDATE_INT));
+		$cleared_event_start_minute		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_start_minute', FILTER_VALIDATE_INT));
+		$cleared_event_end_day			= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_end_day', FILTER_VALIDATE_INT));
+		$cleared_event_end_month		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_end_month', FILTER_VALIDATE_INT));
+		$cleared_event_end_year			= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_end_year', FILTER_VALIDATE_INT));
+		$cleared_event_end_hour			= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_end_hour', FILTER_VALIDATE_INT));
+		$cleared_event_end_minute		= $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_end_minute', FILTER_VALIDATE_INT));
+		$cleared_event_header			= trim( $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_header', FILTER_SANITIZE_SPECIAL_CHARS)) );
+		$cleared_event_body				= trim( $this->dbConnection->SqlInjectionStopper(filter_input(INPUT_POST, 'event_body', FILTER_SANITIZE_SPECIAL_CHARS)) );
 
 		$now					= $this->getActualDateTimeObj();
 		$entry_edited			= $now->format('Y-m-d H:i:s');
 		$entry_start_datetime	= $cleared_event_start_year.'-'.$cleared_event_start_month.'-'.$cleared_event_start_day.' '.$cleared_event_start_hour.':'.$cleared_event_start_minute.':00';
 		$entry_end_datetime		= $cleared_event_end_year.'-'.$cleared_event_end_month.'-'.$cleared_event_end_day.' '.$cleared_event_end_hour.':'.$cleared_event_end_minute.':00';
 
-		$sqlQuery = "
+		echo $cleared_event_id;
+
+		if(isset($cleared_event_id))
+		{
+			$sqlQuery = "
 					UPDATE
 						entries
 					SET
@@ -357,14 +567,112 @@ class Calender
 						entry_id = '$cleared_event_id'
 					";
 
-		$sqlResult = $dbConnection->sendSqlQuery($sqlQuery);
+			//echo $sqlQuery;
 
-		if($sqlResult)
-			echo 'Eintragung erfolgreich. <a href="index.php">Zur&uuml;ck</a>';
+			$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
 
+			/*
+			echo '<pre>';
+			var_dump($sqlResult);
+			echo '</pre>';
+			*/
+
+			if($sqlResult)
+			{
+				echo 'Datensatz wurde ge&auml;ndert. <a href="index.php">Zur&uuml;ck</a>';
+			}
+			else
+			{
+				echo 'Datensatz konnte nicht ge&auml;ndert, bzw. gefunden werden. <a href="index.php">Zur&uuml;ck</a>';
+			}
+		}
+		else
+		{
+			$sqlQuery = "
+					INSERT
+						entries (entry_inserted, entry_start_datetime, entry_end_datetime, entry_header, entry_body)
+					VALUES
+						('$entry_edited', '$entry_start_datetime', '$entry_end_datetime', '$cleared_event_header', '$cleared_event_body')
+					";
+
+			$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
+
+			/*
+			echo '<pre>';
+			var_dump($sqlResult);
+			echo '</pre>';
+			*/
+
+			if($sqlResult)
+				echo 'Datensatz wurde hinzugef&uuml;gt. <a href="index.php">Zur&uuml;ck</a>';
+			else
+				echo 'Daten konnten nicht eingetragen werden, bitte versuchen Sie es später erneut. <a href="index.php">Zur&uuml;ck</a>';
+		}
+
+		$this->dbConnection->closeConnection();
 	}
 
+	public function deleteEventFromDB($event_id)
+	{
+		$this->dbConnection->openConnection();
 
+		$cleared_event_id = $this->dbConnection->SqlInjectionStopper($event_id);
+
+		$sqlQuery = "
+					DELETE FROM
+						entries
+					WHERE
+						entry_id = '$cleared_event_id'
+					";
+
+		$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
+
+		/*
+		echo '<pre>';
+		var_dump($sqlResult);
+		echo '</pre>';
+		*/
+
+		if($sqlResult)
+		{
+			echo 'Datensatz wurde gel&ouml;scht. <a href="index.php">Zur&uuml;ck</a>';
+		}
+		else
+		{
+			echo 'Datensatz konnte nicht gel&ouml;scht, bzw. gefunden werden. <a href="index.php">Zur&uuml;ck</a>';
+		}
+
+		$this->dbConnection->closeConnection();
+	}
+
+	public function readEventFromDB($event_id)
+	{
+		$this->dbConnection->openConnection();
+
+		$cleared_event_id = $this->dbConnection->SqlInjectionStopper($event_id);
+
+		$sqlQuery = "
+					SELECT
+						entry_id, entry_inserted, entry_start_datetime, entry_end_datetime, entry_header, entry_body
+					FROM
+						entries
+					WHERE
+						entry_id = '$cleared_event_id'
+					";
+
+		$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
+
+		if($sqlResult->num_rows > 0)
+		{
+			return $sqlResult->fetch_assoc();
+		}
+		else
+		{
+			echo 'Datensatz konnte nicht gelesen, bzw. gefunden werden.';
+		}
+
+		$this->dbConnection->closeConnection();
+	}
 
 	// Date und Time Funktionen
 
