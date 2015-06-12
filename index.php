@@ -1,7 +1,7 @@
 <?php
 
 require_once 'classes.inc.php';
-require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInput.class.php';
+//require_once $_SERVER['DOCUMENT_ROOT'].'./MyProjects/_MyClasses/FilterExternalInput.class.php';
 
 ?>
 
@@ -21,7 +21,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInp
 
 	$calender = new Calender();
 
-	// Termin hinzufügen & ändern
+	// Termin hinzufÃ¼gen & Ã¤ndern
 	if(isset($_GET['action']))
 	{
 		$action = filter_input(INPUT_GET, 'action', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -54,11 +54,25 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInp
 		}
 		elseif(($action == "add_event" || $action == "edit_event") && $confirm == "true")
 		{
-			$calender->writeEventToDB();
+            if($calender->checkPW())
+            {
+                $calender->writeEventToDB();
+            }
+            else
+            {
+                echo 'Da stimmt etwas nicht. <a href="index.php">zur&uuml;ck zum Kalender</a>';
+            }
 		}
 		elseif($action == "del_event" && $confirm == "true")
 		{
-			$calender->deleteEventFromDB($cleared_event_id);
+            if($calender->checkPW())
+            {
+                $calender->deleteEventFromDB($cleared_event_id);
+            }
+            else
+            {
+                echo 'Da stimmt etwas nicht. <a href="index.php">zur&uuml;ck zum Kalender</a>';
+            }
 		}
 
 	}
@@ -80,14 +94,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInp
 
 		?>
 			<div class="calender clearfix">
-				<div class="navigationRow row">
-					<div class="navigationRowItem rowItem"><a href=""><i class="fa fa-angle-double-left"></i> Jahr</a></div>
-					<div class="navigationRowItem rowItem"><a href=""><i class="fa fa-angle-left"></i> Monat</div>
-					<div class="navigationRowItem rowItem"><a href="">Monat <i class="fa fa-angle-right"></i></div>
-					<div class="navigationRowItem rowItem"><a href="">Jahr <i class="fa fa-angle-double-right"></i></div>
-				</div>
-
-				<div class="weekDayNamesRow row">
+				<!--<div class="weekDayNamesRow row">
 					<?php
 					/*
 					$daynames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -98,7 +105,7 @@ require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInp
 					}
 					*/
 					?>
-				</div>
+				</div>-->
 
 				<?php
 

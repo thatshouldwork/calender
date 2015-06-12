@@ -1,14 +1,17 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/DBConnection.class.php';
-require_once $_SERVER['DOCUMENT_ROOT'].'/MyProjects/_MyClasses/FilterExternalInput.class.php';
-require_once 'config.inc.php';
+//echo $_SERVER['DOCUMENT_ROOT'];
+
+//require_once ($_SERVER['DOCUMENT_ROOT']."../_MyClasses/DBConnection.class.php");
+require_once ("_MyClasses/DBConnection.class.php");
+require_once 'C:/WebDev/Websites/MyProjects/_MyClasses/FilterExternalInput.class.php';
+require_once 'C:/WebDev/Websites/MyProjects/calender/config.inc.php';
 
 
 class Calender
 {
-	private $hour;
-	private $minute;
+	//private $hour;
+	//private $minute;
 	private $year;
 	private $month;
 	private $day;
@@ -69,8 +72,17 @@ class Calender
 
 			$this->dbConnection->openConnection();
 
-			$clearedYear	= $this->dbConnection->SqlInjectionStopper($this->year);
-			$clearedMonth	= $this->dbConnection->SqlInjectionStopper($this->month);
+            if($month == NULL && $year == NULL)
+            {
+                $clearedYear	= $this->dbConnection->SqlInjectionStopper($this->year);
+                $clearedMonth	= $this->dbConnection->SqlInjectionStopper($this->month);
+            }
+            else
+            {
+                $clearedYear	= $this->dbConnection->SqlInjectionStopper($year);
+                $clearedMonth	= $this->dbConnection->SqlInjectionStopper($month);
+            }
+
 
 			$sqlQuery = "
 						SELECT
@@ -88,9 +100,9 @@ class Calender
 
 			$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
 
-			$monthDayCount = $this->monthDayCount($this->year.'-'.$this->month.'-'.$this->day);
+			$monthDayCount = $this->monthDayCount($clearedYear.'-'.$clearedMonth.'-'.$this->day);
 
-			$monthStartDayName = $this->monthStartDayName($this->year.'-'.$this->month.'-'.$this->day);
+			$monthStartDayName = $this->monthStartDayName($clearedYear.'-'.$clearedMonth.'-'.$this->day);
 
 			if($monthDayCount > 28)
 				$rowCount = 5;
@@ -116,11 +128,47 @@ class Calender
 
 			$now = $this->getActualDateTimeObj();
 
-			$monthName = $this->monthName($this->year.'-'.$this->month.'-'.$this->day);
+			$monthName = $this->monthName($clearedYear.'-'.$clearedMonth.'-'.$this->day);
 
-			echo '<div class="row">'.$monthName.' '.$this->year.' | <a href="?action=add_event">Termin hinzuf&uuml;gen</a> | </div>';
+            if($clearedMonth == 1)
+            {
+                $subMonth = "?year=". ($clearedYear - 1) ."&month=12";
 
-			for($i = 1; $i <= $rowCount; $i++) // 6x7 Zellen (1 Zeile fest für Tagesnamen)
+                $addMonth = "?year=". $clearedYear ."&month=". ($clearedMonth + 1);
+
+
+            }
+            elseif($clearedMonth == 12)
+            {
+                $subMonth = "?year=". $clearedYear ."&month=". ($clearedMonth - 1);
+
+                $addMonth = "?year=". ($clearedYear + 1) ."&month=1";
+            }
+            else
+            {
+                $subMonth = "?year=". $clearedYear ."&month=". ($clearedMonth - 1);
+
+                $addMonth = "?year=". $clearedYear ."&month=". ($clearedMonth + 1);
+            }
+            ?>
+
+            <div class="navigationRow row">
+                <div class="navigationRowItem rowItem"><a href="?year=<?php echo $clearedYear - 1; ?>&month=<?php echo $clearedMonth *= 1; ?>"><i class="fa fa-angle-double-left"></i> Jahr</a></div>
+                <div class="navigationRowItem rowItem"><a href="<?php echo $subMonth ?>"><i class="fa fa-angle-left"></i> Monat</div>
+                <div class="navigationRowItem rowItem"><a href="<?php echo $addMonth ?>">Monat <i class="fa fa-angle-right"></i></div>
+                <div class="navigationRowItem rowItem"><a href="?year=<?php echo $clearedYear + 1; ?>&month=<?php echo $clearedMonth; ?>">Jahr <i class="fa fa-angle-double-right"></i></a></div>
+            </div>
+
+            <?php
+
+			echo '<div class="row">'.$monthName.' '.$clearedYear.' | <a href="?action=add_event">Termin hinzuf&uuml;gen</a>';
+            if($clearedYear != $now->format('Y') || $clearedMonth != $now->format('m'))
+            {
+                echo ' | <a href="?year='. $now->format('Y') .'&month='. ($now->format('m') * 1) .'">Zum aktuellen Monat wechseln</a>';
+            }
+            echo '</div>';
+
+			for($i = 1; $i <= $rowCount; $i++) // 6x7 Zellen (1 Zeile fest fï¿½r Tagesnamen)
 			{
 				echo '<div class="weekDayRow row">';
 
@@ -147,6 +195,8 @@ class Calender
 							$dayNameNumeric = 1;
 					}
 
+                    echo '<br><br>';
+
 					if($daycount >= $monthStartDayName)
 					{
 						foreach ($sqlResult as $entry)
@@ -162,7 +212,7 @@ class Calender
 									$startTime	= $this->formatTime($entry['entry_start_datetime']);
 									$endTime	= $this->formatTime($entry['entry_end_datetime']);
 
-									echo '<a href="" title="'.$entry['entry_body'].'">'.$startTime.' - '.$endTime.'<br>'.$entry['entry_header'].'</a> <a href="?action=edit_event&event_id='.$entry['entry_id'].'" title="Eintrag &auml;ndern"><i class="fa fa-pencil-square-o"></i></a> <a href="?action=del_event&confirm=check&event_id='.$entry['entry_id'].'" title="Eintrag l&ouml;schen"><i class="fa fa-eraser"></i></a>';
+									echo '<a href="" title="'.$entry['entry_body'].'">'.$startTime.' - '.$endTime.'<br>'.$entry['entry_header'].'</a><br><a href="?action=edit_event&event_id='.$entry['entry_id'].'" title="Eintrag &auml;ndern"><i class="fa fa-pencil-square-o"></i></a> <a href="?action=del_event&confirm=check&event_id='.$entry['entry_id'].'" title="Eintrag l&ouml;schen"><i class="fa fa-eraser"></i></a>';
 
 									?>
 								</div>
@@ -180,9 +230,9 @@ class Calender
 			}
 
 
-			// Anderer Ansatz für Darstellung
+			// Anderer Ansatz fï¿½r Darstellung
 			/*
-			for($i = 1; $i <= $rowCount; $i++) // 6x7 Zellen (1 Zeile fest für Tagesnamen)
+			for($i = 1; $i <= $rowCount; $i++) // 6x7 Zellen (1 Zeile fest fï¿½r Tagesnamen)
 			{
 				echo '<div class="weekDayRow row">';
 
@@ -243,11 +293,14 @@ class Calender
 	public function showYear()
 	{
 
+        return;
 	}
 
 	private function showErrorMsg($msg)
 	{
 		echo '<p class="errorMsg">Ups das ist wohl was schief gelaufen. '.$msg;
+
+        return;
 	}
 
 
@@ -272,8 +325,8 @@ class Calender
 			$event_end_minute	= $event_end->format('i');
 		}
 
-	
-	?>
+	    ?>
+
 		<div class="event_form">
 				<fieldset name="eventForm">
 					<legend>Tragen Sie die Termindetails ein</legend>
@@ -282,17 +335,19 @@ class Calender
 						<fieldset name="event_start">
 							<legend>Beginn</legend>
 							<label for="date" class="label_width">Datum: </label>
-							<select name="event_start_day">
-								<?php
+                            <label>
+                                <select name="event_start_day">
+                                    <?php
 									for($i = 1; $i <= 31; $i++)
 									{
 										echo '<option value="'. $i.'"';
 										if($event != NULL && $event_start_day == $i)	echo ' selected';
 										echo '>'. str_pad($i, 2, '0', STR_PAD_LEFT) .'</option>';
-									}
-								?>
-							</select>
-							.
+                                    }
+                                    ?>
+                                </select>
+                            </label>
+                            .
 							<select name="event_start_month">
 								<?php
 									for($i = 1; $i <= 12; $i++)
@@ -414,7 +469,10 @@ class Calender
 					</form>
 				</fieldset>
 			</div>
-	<?php
+
+	    <?php
+
+        return;
 	}
 
 	public function showEventCheckForm($action)
@@ -466,7 +524,8 @@ class Calender
 			echo '<form action="index.php?action=del_event&confirm=true" method="post">';
 		else
 			echo '<form action="index.php?action=add_event&confirm=true" method="post">';
-	?>
+
+	    ?>
 
 			<fieldset>
 				<legend>Sind die Daten korrekt ?</legend>
@@ -481,7 +540,9 @@ class Calender
 														'.'.str_pad($event_end_month, 2, '0', STR_PAD_LEFT).
 														'.'.str_pad($event_end_year, 2, '0', STR_PAD_LEFT).
 														' '.str_pad($event_end_hour, 2, '0', STR_PAD_LEFT).
-														':'.str_pad($event_end_minute, 2, '0', STR_PAD_LEFT); ?></span><br>
+														':'.str_pad($event_end_minute, 2, '0', STR_PAD_LEFT); ?></span><br><br>
+                <label>Paswort: </label><input type="password" value="passwort" name="password"><br><br>
+
 				<?php
 				if(isset($event_id) && $action == "del_event")
 				{
@@ -521,7 +582,9 @@ class Calender
 			</fieldset>
 		</form>
 
-	<?php
+	    <?php
+
+        return;
 	}
 
 	
@@ -554,7 +617,7 @@ class Calender
 		$entry_start_datetime	= $cleared_event_start_year.'-'.$cleared_event_start_month.'-'.$cleared_event_start_day.' '.$cleared_event_start_hour.':'.$cleared_event_start_minute.':00';
 		$entry_end_datetime		= $cleared_event_end_year.'-'.$cleared_event_end_month.'-'.$cleared_event_end_day.' '.$cleared_event_end_hour.':'.$cleared_event_end_minute.':00';
 
-		echo $cleared_event_id;
+		//echo $cleared_event_id;
 
 		if(isset($cleared_event_id))
 		{
@@ -606,10 +669,12 @@ class Calender
 			if($sqlResult)
 				echo 'Datensatz wurde hinzugef&uuml;gt. <a href="index.php">Zur&uuml;ck</a>';
 			else
-				echo 'Daten konnten nicht eingetragen werden, bitte versuchen Sie es später erneut. <a href="index.php">Zur&uuml;ck</a>';
+				echo 'Daten konnten nicht eingetragen werden, bitte versuchen Sie es spï¿½ter erneut. <a href="index.php">Zur&uuml;ck</a>';
 		}
 
 		$this->dbConnection->closeConnection();
+
+        return;
 	}
 
 	public function deleteEventFromDB($event_id)
@@ -657,7 +722,7 @@ class Calender
 					FROM
 						entries
 					WHERE
-						entry_id = '$cleared_event_id'
+						entry_id = '".$cleared_event_id."'
 					";
 
 		$sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
@@ -673,6 +738,49 @@ class Calender
 
 		$this->dbConnection->closeConnection();
 	}
+
+    public function checkPW()
+    {
+        if(isset($_POST['password']))
+        {
+            $pass = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_SPECIAL_CHARS);
+
+            $this->dbConnection->openConnection();
+
+            $sqlQuery = "
+                    SELECT
+                        password
+                    FROM
+                      woooot
+                    ";
+
+            $sqlResult = $this->dbConnection->sendSqlQuery($sqlQuery);
+
+            if($sqlResult->num_rows > 0)
+            {
+                $data =  $sqlResult->fetch_assoc();
+
+                if($pass == $data['password'])
+                {
+                    $erg = true;
+                }
+                else
+                {
+                    $erg = false;
+                }
+            }
+            else
+            {
+                echo 'Da stimmt etwas nicht. <a href="index.php">zur&uuml;ck zum Kalender</a>';
+
+                $erg = false;
+            }
+
+            $this->dbConnection->closeConnection();
+
+            return $erg;
+        }
+    }
 
 	// Date und Time Funktionen
 
@@ -707,7 +815,7 @@ class Calender
 		return $monthName->format('M');
 	}
 
-	// Gibt den Tagesnamen zurück
+	// Gibt den Tagesnamen zurï¿½ck
 	private function dayName($dayNumeric)
 	{
 		switch($dayNumeric)

@@ -29,6 +29,14 @@ header, section, footer, aside, nav, main, article, figure
 }
 
 
+a {
+
+}
+
+
+
+
+
 
 .calender {
 	display: -webkit-flex;
@@ -76,6 +84,7 @@ header, section, footer, aside, nav, main, article, figure
 }
 
 .dayNumber {
+    float: left;
 	font-weight: bold;
 }
 
@@ -96,13 +105,13 @@ header, section, footer, aside, nav, main, article, figure
 	/*background: pink;*/
 }
 .weekDayRow:first-child {
-	border-left: 1px solid #999;*/
+	border-left: 1px solid #999;
 }
 .weekDayRowItem {
 	border-right: 1px solid #999;
 	border-bottom: 1px solid #999;
-	padding: 5px;
 	/*background: gray;*/
+    padding: 3px;
 	min-width: 150px;
 	min-height: 100px;
 	position: relative;
@@ -127,11 +136,19 @@ header, section, footer, aside, nav, main, article, figure
 }
 
 .weekDayEntry {
+    border: 1px solid lightgrey;
+    border-radius: 10px;
+    width: 70%;
 	/*background: yellow;*/
-	text-align: right;
-	padding-top: 5px;
-	padding-bottom: 5px;
+    text-align: right;
+	padding: 5px;
 	font-size: 12px;
+    margin: 0 auto;
+    margin-bottom: 5px;
+}
+.weekDayEntry:hover {
+    box-shadow: 2px 2px 2px gray;
+
 }
 
 .label_width {
